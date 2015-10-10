@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>{{title}}</title>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0;" name="viewport" >
+<meta name="description" content="kiln share" >
 <style type="text/css">
 body{font-size:16px}
 @media screen and (min-width:1024px){
@@ -23,44 +24,23 @@ div#ad{ position:fixed; bottom:0px; left :0px; width:100%;max-height:200px; }
 </style>
 </head>
 <body>
+{{#thumbnail}}
+<div style="display:none"> <img src="{{thumbnail}}" width="500" height="500" /> </div>
+{{/thumbnail}}
 <div class="rich_media">
 <h2 class="rich_media_title">{{title}}</h2>
 <div class="rich_media_meta_list">
 <span id="date" class="rich_media_meta">{{date}}</span>
-<span id="author" class="rich_media_meta"></span>
+<span id="author" class="rich_media_meta">{{{author-html}}}</span>
 </div>
 <div id="content" class="rich_media_content">
-{{#thumbnail}}
-<img src="{{thumbnail}}" style="display:none" />
-{{/thumbnail}}
 {{{content}}}
 </div>
+{{#ad-html}}
+<br><br><br><br><br>
+<div id="ad">{{{ad-html}}}</div>
+{{/ad-html}}
 <div id="footer"></div>
-<div id="ad"></div>
 </div>
 </body>
-<script type="text/javascript">
-var dict={{{dict}}};
-var ad="{{ad}}";
-var author="{{author}}";
-//
-if(author!=''){
-    var tmp=author;
-    if(dict.hasOwnProperty(author)){
-        tmp='<a href="'+dict[author]+'">'+tmp+'</a>';
-    }
-    document.getElementById('author').innerHTML=tmp;
-}
-//ad
-if(ad!=''){
-    var tmp=ad;
-    if(dict.hasOwnProperty(ad)){
-        tmp='<a href="'+dict[ad]+'"><img src="'+tmp+'" style="width:100%" /></a>';
-    }
-    document.getElementById('ad').innerHTML=tmp;
-}else{
-    var adnode = document.getElementById("ad");
-    adnode.parentNode.removeChild(adnode);
-    }
-</script>
 </html>

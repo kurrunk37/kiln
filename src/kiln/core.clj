@@ -4,9 +4,10 @@
   (:require [clojure.data.json :as json]
             [markdown.core :as markdown]
             [clj-time.coerce :as timec]
-            [clj-time.format :as timef]))
+            [clj-time.format :as timef]
+            [seesaw.core :refer [native! frame show! config!]]))
 
-(def workdir "/Users/hu/dev/kiln/test/sync/")
+#_(def workdir "/Users/hu/dev/kiln/test/sync/")
 (def workdir "./")
 
 (defn only-markdown
@@ -20,6 +21,28 @@
         {}
         ))
 
+(defn wrap-author
+    "元数据的作者，转成HTML"
+    [meta-map]
+    (if (and (contains? meta-map :author)
+             (not-empty (:author meta-map))
+             (contains? dict (:author meta-map)))
+        (let [author (:author meta-map)]
+            (merge meta-map
+                {:author-html (str "<a href=\"" (get dict author) "\">" author "</a>")}))
+        meta-map))
+
+(defn wrap-ad
+    "元数据的广告，转成HTML"
+    [meta-map]
+    (if (and (contains? meta-map :ad)
+             (not-empty (:ad meta-map))
+             (contains? dict (:ad meta-map)))
+        (let [ad (:ad meta-map)]
+            (merge meta-map
+                {:ad-html (str "<a href=\"" (get dict ad) "\"><img src=\"" ad "\" style=\"width:100%;height:80px;\" /></a>")}))
+        meta-map))
+
 (defn generation
     "生成 html 文件"
     [md-file]
@@ -32,9 +55,9 @@
                         :content (markdown/md-to-html-string md-string)
                         :date (timef/unparse (timef/formatter "yyyy-MM-dd") (timec/from-long (.lastModified md-file)))
                         }
-                    (into {} (for
+                    (wrap-author (wrap-ad (into {} (for
                          [[_ k v] (map #(re-matches #"^([\w]+)[\s]*:[\s]*(.+)$" %) meta-lines)]
-                         [(keyword (clojure.string/lower-case k)) v])))
+                         [(keyword (clojure.string/lower-case k)) v])))))
               html-file (str "/html/" (clojure.string/replace (.getName md-file) #".md$" ".html"))]
             (spit (str workdir html-file)
                 (render-string
@@ -50,9 +73,21 @@
             (println html-file)
             )))
 
+(def win-f
+    (frame
+        :title "kiln"
+        :width 240
+        :height 180
+        :content "准备中……"
+        :on-close :exit))
+(show! win-f)
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (doseq [md-file (only-markdown (file-seq (clojure.java.io/file (str workdir "/src"))))]
-    (generation md-file))
-  )
+    (generation md-file)
+    (Thread/sleep 500)
+    (config! win-f :content (str (.getName md-file) " --- ok!")))
+  (Thread/sleep 1000)
+  (config! win-f :content " HTML已生成，接下来可以同步上线了！"))

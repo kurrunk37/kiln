@@ -7,6 +7,7 @@
                  [stencil "0.5.0"]
                  [org.clojure/data.json "0.2.6"]
                  [clj-time "0.11.0"]
+                 [seesaw "1.4.5"]
                  [markdown-clj "0.9.74"]]
   :main ^:skip-aot kiln.core
   :target-path "target/%s"
