@@ -5,6 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [stencil "0.5.0"]
+                 [org.clojure/data.json "0.2.6"]
+                 [clj-time "0.11.0"]
                  [markdown-clj "0.9.74"]]
   :main ^:skip-aot kiln.core
   :target-path "target/%s"
