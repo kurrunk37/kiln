@@ -5,7 +5,7 @@
             [markdown.core :as markdown]
             [clj-time.coerce :as timec]
             [clj-time.format :as timef]
-            [seesaw.core :refer [native! frame show! config!]]))
+            [seesaw.core :refer [frame show! config!]]))
 
 #_(def workdir "/Users/hu/dev/kiln/test/sync/")
 (def workdir "./")
@@ -14,6 +14,15 @@
     " 过滤出目录中的 markdown 文件"
     [file-s]
     (filter #(and (.isFile %) (re-find #".md$" (.getName %))) file-s))
+(defn only-update
+    "过滤出需要更新的markdown文件"
+    [file-s]
+    (filter
+        (fn [f]
+            (let [html-file (clojure.java.io/file (str workdir "/html/" (clojure.string/replace (.getName f) #".md$" "") ".html"))]
+                (or (not (.isFile html-file))
+                    (< (.lastModified html-file) (.lastModified f)))))
+        file-s))
 
 (def dict
     (if (.exists (clojure.java.io/file (str workdir "/map.clj")))
@@ -58,7 +67,7 @@
                     (wrap-author (wrap-ad (into {} (for
                          [[_ k v] (map #(re-matches #"^([\w]+)[\s]*:[\s]*(.+)$" %) meta-lines)]
                          [(keyword (clojure.string/lower-case k)) v])))))
-              html-file (str "/html/" (clojure.string/replace (.getName md-file) #".md$" ".html"))]
+              html-file (str "/html/" (clojure.string/replace (.getName md-file) #".md$" "") ".html")]
             (spit (str workdir html-file)
                 (render-string
                     (slurp (str workdir "/template/" (:template meta-map) ".html"))
@@ -70,6 +79,20 @@
                                         (first %))
                                     dict)))}
                     )))
+            (let [data-clj (str workdir "/.data.clj")
+                  data-list
+                    (assoc (if (.isFile (clojure.java.io/file data-clj))
+                            (read-string (slurp data-clj))
+                            {})
+                        html-file
+                        {:title (:title meta-map)
+                         :url html-file
+                         :date (:date meta-map)})]
+                (spit data-clj (pr-str data-list))
+                (spit (str workdir "index.html")
+                    (render-string
+                        (slurp (str workdir "/template/list.html"))
+                        {:data (vals data-list)})))
             (println html-file)
             )))
 
@@ -85,9 +108,9 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (doseq [md-file (only-markdown (file-seq (clojure.java.io/file (str workdir "/src"))))]
+  (doseq [md-file (only-update (only-markdown (file-seq (clojure.java.io/file (str workdir "/src")))))]
     (generation md-file)
     (Thread/sleep 500)
     (config! win-f :content (str (.getName md-file) " --- ok!")))
-  (Thread/sleep 1000)
+  (Thread/sleep 1500)
   (config! win-f :content " HTML已生成，接下来可以同步上线了！"))
