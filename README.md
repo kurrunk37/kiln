@@ -1,36 +1,54 @@
-# kiln
+# kiln 使用说明
 
-FIXME: description
+这是一个静态网页生成器，可以通过配置和内容生成网页。
 
-## Installation
+## 组成
 
-Download from http://example.com/FIXME.
+* 模板
+* 内容
+* 广告
 
-## Usage
+### 模板
 
-FIXME: explanation
+目录: /template
 
-    $ java -jar kiln-0.1.0-standalone.jar [args]
+通过模板配置生成的网页样式，预设微信公众号的样式。
 
-## Options
+### 内容+元数据
 
-FIXME: listing of options this app accepts.
+目录：/src
 
-## Examples
+网页的主内容，以及配置信息。文件是以.md结尾，内容分为两个部分：元数据、正文。
 
-...
+元数据在文件顶部，用多行“KEY:VALUE”的形式存在。通过编辑元数据可以设置生成的网页的时间、作者、模板、广告等。
 
-### Bugs
+#### 元数据项
 
-...
+date : 时间 (可选,默认为文件编辑时间)  
+title : 标题  
+ad : /images/AD1.jpg (可选)  
+author :  胡正正 (可选)  
+thumbnail : /images/ADs1.jpg (可选)  
+template : weixin (可选，默认是微信模板)
 
-### Any Other Sections
-### That You Think
-### Might be Useful
+除了"title"项，其它项都不是必须的。
 
-## License
+#### 正文
 
-Copyright © 2015 FIXME
+正文的格式是markdown，如果内容只有文字，只需要像平常一样编辑内容即可。需要注意的是段落间需要有一个空行。
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+### 广告
+
+广告是以图片地址区分的，在images目录中加入广告图片后，用/images/***.jpg作广告的标识。在内容的元数据项引用这个广告标识即可。
+
+广告的链接地址在/map.clj文件中配置。
+
+
+## 新增网页的步骤
+
+1. （可选）把广告图片放入/images目录
+2. （可选）把分享缩略图放入/images目录
+3. 编辑内容文件（*.md），并放入/src目录
+4. 运行kiln.jar文件
+
+通过以上步骤在本地生成网页文件，下一步就可以上传到服务器上了。
