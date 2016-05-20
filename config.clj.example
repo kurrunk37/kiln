@@ -1,0 +1,8 @@
+{
+  :input "./writer/"
+	:output "./html/"
+;	:template "./template/"
+	:blog-name "测试"
+  :blog-url "http://blog.kurrunk.com"
+  :blog-description "我的博客"
+}

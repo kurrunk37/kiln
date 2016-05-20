@@ -1,22 +1,29 @@
 # kiln 使用说明
 
-这是一个静态网页生成器，可以通过配置和内容生成网页。
+这是一个静态blog生成器，可以通过配置和内容生成网页。
 
-## 组成
+## 配置文件
 
-* 模板
-* 内容
-* 广告
+当前目录的 config.clj
+
+```
+  :input "./writer/"
+	:output "./html/"
+	:template "./template/" ;(非必选)
+	:blog-name "测试"
+  :blog-url "http://blog.kurrunk.com"
+  :blog-description "我的博客"
+```
 
 ### 模板
 
-目录: /template
+模板格式为mustache，文件名必须以`.mustache`结尾。共有三个模板文件:
 
-通过模板配置生成的网页样式，预设微信公众号的样式。
+* index.mustache
+* tag.mustache
+* article.mustache
 
 ### 内容+元数据
-
-目录：/src
 
 网页的主内容，以及配置信息。文件是以.md结尾，内容分为两个部分：元数据、正文。
 
@@ -26,29 +33,15 @@
 
 date : 时间 (可选,默认为文件编辑时间)  
 title : 标题  
-ad : /images/AD1.jpg (可选)  
-author :  胡正正 (可选)  
-thumbnail : /images/ADs1.jpg (可选)  
-template : weixin (可选，默认是微信模板)
-
-除了"title"项，其它项都不是必须的。
 
 #### 正文
 
 正文的格式是markdown，如果内容只有文字，只需要像平常一样编辑内容即可。需要注意的是段落间需要有一个空行。
 
-### 广告
+## 新增文章的步骤
 
-广告是以图片地址区分的，在images目录中加入广告图片后，用/images/***.jpg作广告的标识。在内容的元数据项引用这个广告标识即可。
-
-广告的链接地址在/map.clj文件中配置。
-
-
-## 新增网页的步骤
-
-1. （可选）把广告图片放入/images目录
-2. （可选）把分享缩略图放入/images目录
-3. 编辑内容文件（*.md），并放入/src目录
-4. 运行kiln.jar文件
+1. 编辑markdown文件
+2. 运行kiln.jar文件
+3. 同步到你的服务器上
 
 通过以上步骤在本地生成网页文件，下一步就可以上传到服务器上了。
