@@ -11,4 +11,4 @@ pom.xml.asc
 .hg/
 *.swp
 .DS_Store
-qiniu
+/test/*

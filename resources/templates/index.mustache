@@ -4,12 +4,12 @@
 	<title>{{blog-name}}</title>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link type="application/rss+xml" rel="alternate" href="/rss.xml" />
+	<link type="application/rss+xml" rel="alternate" href="/rss.xml" title="{{blog-name}} &raquo; Feed" />
 	<meta name="description" content="{{blog-description}}" />
 	<style type="text/css">
 		body{background-color:#f4f4f4;}
 		header,footer,aside{text-align:center}
-		footer,footer>a{color:#999;font-size:12px;}
+		footer,footer a{color:#999;font-size:12px;}
 		header,header>h1{font-size:1em}
 		article{max-width:36em; line-height:170%; margin:auto; background-color:white; padding:1.5em; border-radius:7px;}
 	</style>
@@ -19,9 +19,9 @@
 	<h1>{{blog-name}}</h1>
 	<p>{{blog-description}}</p>
 	</header>
-	<article> {{#tags}} <a href="tag/{{urlcode}}.html">{{name}}</a>{{/tags}} </article>
+	<article> {{#tags}} <a href="tag/{{urlcode}}.html" style="font-size:{{weight}}em">{{name}}</a>{{/tags}} </article>
 	<footer>
-		<a href="https://github.com/huzhengquan/kiln">kiln</a>驱动
+	<p><a href="https://github.com/huzhengquan/kiln">kiln</a>驱动</p>
 	</footer>
 </body>
 </html>
