@@ -35,7 +35,6 @@
        (or (not (.isFile html-file)) (< (.lastModified html-file) (.lastModified f)))))
     file-s))
 
-(println (timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd"))
 (def blogdate-formatter
   (timef/formatter
     (timet/default-time-zone) 
