@@ -35,14 +35,15 @@
        (or (not (.isFile html-file)) (< (.lastModified html-file) (.lastModified f)))))
     file-s))
 
+(println (timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd"))
 (def blogdate-formatter
   (timef/formatter
     (timet/default-time-zone) 
+    "YYYY-MM-dd HH:mm:ss"
     "YYYY-MM-dd"
     "YYYY/MM/dd"
     "YYYY-MM-dd HH"
     "YYYY-MM-dd HH:mm"
-    "YYYY-MM-dd HH:mm:ss"
     ))
 (defn- read-markdown
   "读取文章内容"
@@ -62,7 +63,7 @@
                 (keyword (clojure.string/lower-case (clojure.string/trim k)))
                 (cond
                   (= k "tags") (set (filter #(not (clojure.string/blank? %1)) (map clojure.string/trim (clojure.string/split v #","))))
-                  (= k "date") (timef/unparse blogdate-formatter (timef/parse blogdate-formatter (clojure.string/trim v)))
+                  (= k "date") (timec/to-long (timef/parse blogdate-formatter (clojure.string/trim v)))
                   :else v
                   )
                 ]))) ]
@@ -85,6 +86,9 @@
             config
             meta-dict
             {:tags (map #(hash-map :name %1, :urlcode (URLEncoder/encode %1 "UTF-8")) (get meta-dict :tags #{}))
+             :date (timef/unparse
+                    (timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd")
+                    (timec/from-long (:date meta-dict)))
              :content html-content })
           ))
       (let [data-clj (str (:output config) "/.data.clj")
@@ -94,7 +98,6 @@
               {})
             id
             (select-keys meta-dict [:title :date :tags])
-            ;{:title (:title meta-dict) :date (:date meta-dict) :tags (get meta-dict :tags [])}
                          )]
         (spit data-clj (pr-str data-list)))
       id
@@ -135,7 +138,7 @@
               }
               (map #(hash-map
                       :title (str "<![CDATA[ " (get %1 :title "None") " ]]>")
-                      :pubDate (timec/to-date (timef/parse blogdate-formatter (:date %1)))
+                      :pubDate (timec/to-date (timec/from-long (:date %1)))
                       :guid (str (:blog-url config) "/article/" (:urlcode %1) ".html")
                       :link (str (:blog-url config) "/article/" (:urlcode %1) ".html")
                       :description (str "<![CDATA[ " (:html-content (read-markdown (clojure.java.io/file (str (:input config) "/" (:id %1) ".md")))) " ]]>"))
@@ -150,7 +153,13 @@
             {:article-list
               (reverse (sort-by :date (filter
                 #(contains? (get %1 :tags #{}) tag)
-                (map #(merge (last %1) {:id (first %1) :urlid (URLEncoder/encode (first %1) "UTF-8")}) article-list))))
+                (map #(merge (last %1)
+												{:id (first %1)
+												 :urlid (URLEncoder/encode (first %1) "UTF-8")
+												 :date (timef/unparse
+																(timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd")
+																(timec/from-long (:date (last %1))))
+												 }) article-list))))
              :title tag})))))))
 
 (defn -main

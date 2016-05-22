@@ -1,4 +1,4 @@
-(defproject kiln "0.2.1"
+(defproject kiln "0.2.2"
   :description "静态博客生成器"
   :url "https://github.com/huzhengquan/kiln"
   :license {:name "Eclipse Public License"
