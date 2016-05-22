@@ -12,6 +12,13 @@
 
 (def config (read-string (slurp "./config.clj")))
 
+(def all-article (atom 
+  (let [data-clj (str (:output config) "/.data.clj")]
+    (if (.isFile (clojure.java.io/file data-clj))
+      (read-string (slurp data-clj))
+      {}))
+))
+
 (defn- load-template
   "加载模板文件"
   [tid]
@@ -90,26 +97,18 @@
                     (timec/from-long (:date meta-dict)))
              :content html-content })
           ))
-      (let [data-clj (str (:output config) "/.data.clj")
-          data-list
-          (assoc (if (.isFile (clojure.java.io/file data-clj))
-              (read-string (slurp data-clj))
-              {})
-            id
-            (select-keys meta-dict [:title :date :tags])
-                         )]
-        (spit data-clj (pr-str data-list)))
+      (swap! all-article assoc id (select-keys meta-dict [:title :date :tags]))
       id
       ))
 
 (defn- spit-index
   "把有改动部分文章更新到索引文件中，包括index.html和/tags/*.html"
   [id-list]
+  (println (str "updated " (count id-list)));奇怪的地方，没有这行last-tags的值 就是空的
   (if (not (empty? id-list))
-  (let [article-list (read-string (slurp (str (:output config) "/.data.clj")))
-        all-tags (reduce #(assoc %1 %2 (+ (get %1 %2 0) 1)) {} (apply concat (map #(get %1 :tags #{}) (vals article-list))))
-        max-weight (apply max (conj (vals all-tags) 10))
-        last-tags (reduce #(clojure.set/union %1 %2) #{} (map #(get %1 :tags #{}) (vals (select-keys article-list id-list))))]
+  (let [last-tags (reduce #(clojure.set/union %1 %2) #{} (map #(get %1 :tags #{}) (vals (select-keys @all-article id-list))))
+        all-tags (frequencies (apply concat (map :tags #_(get %1 :tags #{}) (vals @all-article))))
+        max-weight (apply max (conj (vals all-tags) 10))]
     ;更新首页
     (println "->" "/index.html")
     (spit (str (:output config) "/index.html")
@@ -120,11 +119,11 @@
           {:tags (map
                    #(hash-map
                       :name (first %1), 
-                      :urlcode (URLEncoder/encode (first %1) "UTF-8")
+                      :urlcode (URLEncoder/encode (str (first %1)) "UTF-8")
                       :weight (format "%.1f" (float (+ 1 (* (/ (last %1) max-weight) 5))))
                       ) all-tags)})))
     ;rss
-    (let [sort-article-list (take 10 (reverse (sort-by :date (map #(assoc (last %1) :urlcode (URLEncoder/encode (first %1) "UTF-8") :id (first %1)) article-list))))]
+    (let [sort-article-list (take 10 (reverse (sort-by :date (map #(assoc (last %1) :urlcode (URLEncoder/encode (str (first %1)) "UTF-8") :id (first %1)) @all-article))))]
       (println "->" "/rss.xml")
       (spit (str (:output config) "/rss.xml")
             (rss/channel-xml
@@ -153,12 +152,12 @@
               (reverse (sort-by :date (filter
                 #(contains? (get %1 :tags #{}) tag)
                 (map #(merge (last %1)
-												{:id (first %1)
-												 :urlid (URLEncoder/encode (first %1) "UTF-8")
-												 :date (timef/unparse
-																(timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd")
-																(timec/from-long (:date (last %1))))
-												 }) article-list))))
+                        {:id (first %1)
+                         :urlid (URLEncoder/encode (first %1) "UTF-8")
+                         :date (timef/unparse
+                                (timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd")
+                                (timec/from-long (:date (last %1))))
+                         }) @all-article))))
              :title tag})))))))
 
 (defn -main
@@ -167,8 +166,6 @@
   (.mkdirs (java.io.File. (str (:output config) "/article/")))
   (.mkdirs (java.io.File. (str (:output config) "/tag/")))
   (if (contains? config :template) (.mkdirs (java.io.File. (:template config))))
-  (if (not (.isFile (clojure.java.io/file (str (:output config) "/.data.clj"))))
-    (spit (str (:output config) "/.data.clj") "{}"))
   (spit-index
     (map
       #(do
@@ -179,4 +176,5 @@
           file-seq
           only-markdown
           only-update)))
-  (println "目标文件已生成"))
+  (spit (str (:output config) "/.data.clj") (pr-str @all-article))
+  (println "done"))
