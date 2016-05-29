@@ -7,12 +7,14 @@
 当前目录的 config.clj
 
 ```
+{
   :input "./writer/"
-	:output "./html/"
-	:template "./template/" ;(非必选)
-	:blog-name "测试"
+  :output "./html/"
+  :template "./template/" ;(非必选)
+  :blog-name "测试"
   :blog-url "http://blog.kurrunk.com"
   :blog-description "我的博客"
+}
 ```
 
 ### 模板
