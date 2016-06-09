@@ -104,7 +104,6 @@
 (defn- spit-index
   "把有改动部分文章更新到索引文件中，包括index.html和/tags/*.html"
   [id-list]
-  (println (str "updated " (count id-list)));奇怪的地方，没有这行last-tags的值 就是空的
   (if (not (empty? id-list))
   (let [last-tags (reduce #(clojure.set/union %1 %2) #{} (map #(get %1 :tags #{}) (vals (select-keys @all-article id-list))))
         all-tags (frequencies (apply concat (map :tags #_(get %1 :tags #{}) (vals @all-article))))
@@ -167,7 +166,7 @@
   (.mkdirs (java.io.File. (str (:output config) "/tag/")))
   (if (contains? config :template) (.mkdirs (java.io.File. (:template config))))
   (spit-index
-    (map
+    (mapv
       #(do
          (println "->" (.getName %1))
          (generation %1))
