@@ -122,7 +122,7 @@
                       :urlcode (URLEncoder/encode (str (first %1)) "UTF-8")
                       :weight (format "%.1f" (float (+ 1 (* (/ (last %1) max-weight) 5))))
                       ) all-tags)
-           :articles (take 20 all_articles)})))
+           :articles (take 20 all-articles)})))
     ;rss
     (let [sort-article-list (take 10 all-articles)]
       (println "->" "/rss.xml")
