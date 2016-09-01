@@ -106,6 +106,7 @@
   [id-list]
   (if (not (empty? id-list))
   (let [last-tags (reduce #(clojure.set/union %1 %2) #{} (map #(get %1 :tags #{}) (vals (select-keys @all-article id-list))))
+        all-articles (reverse (sort-by :date (map #(assoc (last %1) :urlcode (URLEncoder/encode (str (first %1)) "UTF-8") :id (first %1)) @all-article)))
         all-tags (frequencies (apply concat (map :tags #_(get %1 :tags #{}) (vals @all-article))))
         max-weight (apply max (conj (vals all-tags) 10))]
     ;更新首页
@@ -120,9 +121,10 @@
                       :name (first %1), 
                       :urlcode (URLEncoder/encode (str (first %1)) "UTF-8")
                       :weight (format "%.1f" (float (+ 1 (* (/ (last %1) max-weight) 5))))
-                      ) all-tags)})))
+                      ) all-tags)
+           :articles (take 20 all_articles)})))
     ;rss
-    (let [sort-article-list (take 10 (reverse (sort-by :date (map #(assoc (last %1) :urlcode (URLEncoder/encode (str (first %1)) "UTF-8") :id (first %1)) @all-article))))]
+    (let [sort-article-list (take 10 all-articles)]
       (println "->" "/rss.xml")
       (spit (str (:output config) "/rss.xml")
             (rss/channel-xml
