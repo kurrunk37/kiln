@@ -10,7 +10,7 @@
       [clj-rss.core :as rss]
       ))
 
-(def config (read-string (slurp "./config.clj")))
+(def config (read-string (slurp "./_config.clj")))
 
 (def all-article (atom 
   (let [data-clj (str (:output config) "/.data.clj")]
