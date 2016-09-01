@@ -4,11 +4,11 @@
 
 ## 配置文件
 
-当前目录的 config.clj
+当前目录的 _config.clj
 
 ```
 {
-  :input "./writer/"
+  :input "./_writer/"
   :output "./html/"
   :template "./template/" ;(非必选)
   :blog-name "测试"
