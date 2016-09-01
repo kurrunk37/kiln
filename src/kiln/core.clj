@@ -91,11 +91,12 @@
           (merge
             config
             meta-dict
-            {:tags (map #(hash-map :name %1, :urlcode (URLEncoder/encode %1 "UTF-8")) (get meta-dict :tags #{}))
+            {:id id
+             :tags (map #(hash-map :name %1, :urlcode (URLEncoder/encode %1 "UTF-8")) (get meta-dict :tags #{}))
              :date (timef/unparse
                     (timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd")
                     (timec/from-long (:date meta-dict)))
-             :content html-content })
+             :html-content html-content })
           ))
       (swap! all-article assoc id (select-keys meta-dict [:title :date :tags]))
       id
@@ -106,7 +107,6 @@
   [id-list]
   (if (not (empty? id-list))
   (let [last-tags (reduce #(clojure.set/union %1 %2) #{} (map #(get %1 :tags #{}) (vals (select-keys @all-article id-list))))
-        all-articles (reverse (sort-by :date (map #(assoc (last %1) :urlcode (URLEncoder/encode (str (first %1)) "UTF-8") :id (first %1)) @all-article)))
         all-tags (frequencies (apply concat (map :tags #_(get %1 :tags #{}) (vals @all-article))))
         max-weight (apply max (conj (vals all-tags) 10))]
     ;更新首页
@@ -122,9 +122,17 @@
                       :urlcode (URLEncoder/encode (str (first %1)) "UTF-8")
                       :weight (format "%.1f" (float (+ 1 (* (/ (last %1) max-weight) 5))))
                       ) all-tags)
-           :articles (take 20 all-articles)})))
+           :article-list (take 20 (reverse (sort-by :date 
+                (map #(merge (last %1)
+                        {:id (first %1)
+                         :urlid (URLEncoder/encode (first %1) "UTF-8")
+                         :date (timef/unparse
+                                (timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd")
+                                (timec/from-long (:date (last %1))))
+                         :html-content (:html-content (read-markdown (clojure.java.io/file (str (:input config) "/" (first %1) ".md"))))
+                         }) @all-article))))})))
     ;rss
-    (let [sort-article-list (take 10 all-articles)]
+    (let [sort-article-list (take 10 (reverse (sort-by :date (map #(assoc (last %1) :urlcode (URLEncoder/encode (str (first %1)) "UTF-8") :id (first %1)) @all-article))))]
       (println "->" "/rss.xml")
       (spit (str (:output config) "/rss.xml")
             (rss/channel-xml
