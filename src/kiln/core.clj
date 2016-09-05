@@ -13,7 +13,7 @@
 (def config (read-string (slurp "./_config.clj")))
 
 (def all-article (atom 
-  (let [data-clj (str (:output config) "/.data.clj")]
+  (let [data-clj (str (:input config) "/.data.clj")]
     (if (.isFile (clojure.java.io/file data-clj))
       (read-string (slurp data-clj))
       {}))
@@ -68,7 +68,7 @@
                [
                 (keyword (clojure.string/lower-case (clojure.string/trim k)))
                 (cond
-                  (= k "tags") (set (filter #(not (clojure.string/blank? %1)) (map clojure.string/trim (clojure.string/split v #","))))
+                  (= k "tags") (set (filter #(not (clojure.string/blank? %1)) (map clojure.string/trim (clojure.string/split v #"[,\t\s，]+"))))
                   (= k "date") (timec/to-long (timef/parse blogdate-formatter (clojure.string/trim v)))
                   :else v
                   )
@@ -98,7 +98,7 @@
                     (timec/from-long (:date meta-dict)))
              :html-content html-content })
           ))
-      (swap! all-article assoc id (select-keys meta-dict [:title :date :tags]))
+      (swap! all-article assoc id (select-keys meta-dict [:title :date :tags :author]))
       id
       ))
 
@@ -129,10 +129,23 @@
                          :date (timef/unparse
                                 (timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd")
                                 (timec/from-long (:date (last %1))))
+                         :author (:author (last %1))
                          :html-content (:html-content (read-markdown (clojure.java.io/file (str (:input config) "/" (first %1) ".md"))))
                          }) @all-article))))})))
     ;rss
-    (let [sort-article-list (take 10 (reverse (sort-by :date (map #(assoc (last %1) :urlcode (URLEncoder/encode (str (first %1)) "UTF-8") :id (first %1)) @all-article))))]
+    (let [sort-article-list
+           (take
+             10
+             (reverse
+               (sort-by
+                 :date-long
+                 (map
+                   #(assoc
+                      (last %1)
+                      :urlcode (URLEncoder/encode (str (first %1)) "UTF-8")
+                      :id (first %1)
+                      :date-long (timec/to-long (:date (last %1))))
+                   @all-article))))]
       (println "->" "/rss.xml")
       (spit (str (:output config) "/rss.xml")
             (rss/channel-xml
@@ -185,5 +198,5 @@
           file-seq
           only-markdown
           only-update)))
-  (spit (str (:output config) "/.data.clj") (pr-str @all-article))
+  (spit (str (:input config) "/.data.clj") (pr-str @all-article))
   (println "done"))
