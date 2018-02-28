@@ -12,12 +12,7 @@
 
 (def config (atom nil))
 
-(def all-article (atom 
-  (let [data-clj (str (:input @config) "/.data.edn")]
-    (if (.isFile (clojure.java.io/file data-clj))
-      (clojure.edn/read-string (slurp data-clj))
-      {}))
-))
+(def all-article (atom nil))
 
 (defn- load-template
   "加载模板文件"
@@ -185,6 +180,11 @@
 (defn- exec 
   []
   (println "exec")
+  (reset! all-article
+          (let [data-clj (str (:input @config) "/.data.edn")]
+            (if (.isFile (clojure.java.io/file data-clj))
+              (clojure.edn/read-string (slurp data-clj))
+              {})))
   (.mkdirs (java.io.File. (str (:output @config) "/article/")))
   (.mkdirs (java.io.File. (str (:output @config) "/tag/")))
   (when (contains? @config :template)
@@ -205,8 +205,13 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (reset! config (clojure.edn/read-string (slurp (nth args 0 "_config.edn"))) )
-  (cond
-    (not (coll? @config)) (println "error config file")
-    (not (contains? @config :output)) (println "not found :output")
-    :else (exec )))
+  (let [config-default {:input "./_writer/"
+                        :output "./html/"
+                        :blog-name "kiln"
+                        :blog-url "http://hzq.num.run"
+                        :blog-description "我的博客"}
+        config-edn (merge config-default
+                          (clojure.edn/read-string (slurp (nth args 0 "_config.edn"))))]
+    (println :config config-edn)
+    (reset! config config-edn)
+    (exec )))
