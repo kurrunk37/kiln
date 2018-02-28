@@ -10,35 +10,35 @@
       [clj-rss.core :as rss]
       ))
 
-(def config (read-string (slurp "./_config.clj")))
+(def config (atom nil))
 
 (def all-article (atom 
-  (let [data-clj (str (:input config) "/.data.clj")]
+  (let [data-clj (str (:input @config) "/.data.edn")]
     (if (.isFile (clojure.java.io/file data-clj))
-      (read-string (slurp data-clj))
+      (clojure.edn/read-string (slurp data-clj))
       {}))
 ))
 
 (defn- load-template
   "加载模板文件"
   [tid]
-  (let [template-file (clojure.java.io/file (str (:template config) "/" tid ".mustache"))
+  (let [template-file (clojure.java.io/file (str (:template @config) "/" tid ".mustache"))
         resource-file (clojure.java.io/resource (str "templates/" tid ".mustache"))]
-    (if (and (contains? config :template) (.isFile template-file))
+    (if (and (contains? @config :template) (.isFile template-file))
       (slurp template-file)
       (or (slurp resource-file) "not found template-file"))))
 
 (defn- only-markdown
   " 过滤出目录中的 markdown 文件"
   [file-s]
-  (filter #(and (.isFile %) (re-find #".md$" (.getName %))) file-s))
+  (filter #(and (.isFile %) (clojure.string/ends-with? (.getName %) ".md")) file-s))
 
 (defn- only-update
   "过滤出需要更新的markdown文件"
   [file-s]
   (filter
     (fn [f]
-      (let [html-file (clojure.java.io/file (str (:output config) "/article/" (clojure.string/replace (.getName f) #".md$" "") ".html"))]
+      (let [html-file (clojure.java.io/file (str (:output @config) "/article/" (clojure.string/replace (.getName f) #".md$" "") ".html"))]
        (or (not (.isFile html-file)) (< (.lastModified html-file) (.lastModified f)))))
     file-s))
 
@@ -85,11 +85,11 @@
   (let [{meta-dict :meta-dict md-string :md-string html-content :html-content} (read-markdown md-file)
         id (clojure.string/replace (.getName md-file) #".md$" "")
         html-file (str "/article/" id ".html")]
-      (spit (str (:output config) html-file)
+      (spit (str (:output @config) html-file)
         (render-string
           (load-template "article")
           (merge
-            config
+            @config
             meta-dict
             {:id id
              :tags (map #(hash-map :name %1, :urlcode (URLEncoder/encode %1 "UTF-8")) (get meta-dict :tags #{}))
@@ -111,11 +111,11 @@
         max-weight (apply max (conj (vals all-tags) 10))]
     ;更新首页
     (println "->" "/index.html")
-    (spit (str (:output config) "/index.html")
+    (spit (str (:output @config) "/index.html")
       (render-string
         (load-template "index")
         (merge 
-          config 
+          @config 
           {:tags (map
                    #(hash-map
                       :name (first %1), 
@@ -130,7 +130,7 @@
                                 (timef/formatter (timet/default-time-zone) "YYYY-MM-dd" "YYYY/MM/dd")
                                 (timec/from-long (:date (last %1))))
                          :author (:author (last %1))
-                         :html-content (:html-content (read-markdown (clojure.java.io/file (str (:input config) "/" (first %1) ".md"))))
+                         :html-content (:html-content (read-markdown (clojure.java.io/file (str (:input @config) "/" (first %1) ".md"))))
                          }) @all-article))))})))
     ;rss
     (let [sort-article-list
@@ -147,29 +147,29 @@
                       :date-long (timec/to-long (:date (last %1))))
                    @all-article))))]
       (println "->" "/rss.xml")
-      (spit (str (:output config) "/rss.xml")
+      (spit (str (:output @config) "/rss.xml")
             (rss/channel-xml
               {
-               :title (get config :blog-name)
-               :link (get config :blog-url)
-               :description (get config :blog-description)
-               :language (get config :blog-language "zh-CN")
+               :title (get @config :blog-name)
+               :link (get @config :blog-url)
+               :description (get @config :blog-description)
+               :language (get @config :blog-language "zh-CN")
                :lastBuildDate (timec/to-date (timet/now))
               }
               (map #(hash-map
                       :title (str "<![CDATA[ " (get %1 :title "None") " ]]>")
                       :pubDate (timec/to-date (timec/from-long (:date %1)))
-                      :guid (str (:blog-url config) "/article/" (:urlcode %1) ".html")
-                      :link (str (:blog-url config) "/article/" (:urlcode %1) ".html")
-                      :description (str "<![CDATA[ " (:html-content (read-markdown (clojure.java.io/file (str (:input config) "/" (:id %1) ".md")))) " ]]>"))
+                      :guid (str (:blog-url @config) "/article/" (:urlcode %1) ".html")
+                      :link (str (:blog-url @config) "/article/" (:urlcode %1) ".html")
+                      :description (str "<![CDATA[ " (:html-content (read-markdown (clojure.java.io/file (str (:input @config) "/" (:id %1) ".md")))) " ]]>"))
                    sort-article-list))))
     ;更新tag页
     (doseq [tag last-tags]
       (println "->" (str "/tag/" tag ".html"))
-      (spit (str (:output config) "/tag/" tag ".html")
+      (spit (str (:output @config) "/tag/" tag ".html")
         (render-string
           (load-template "tag")
-          (merge config
+          (merge @config
             {:article-list
               (reverse (sort-by :date (filter
                 #(contains? (get %1 :tags #{}) tag)
@@ -182,21 +182,31 @@
                          }) @all-article))))
              :title tag})))))))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (.mkdirs (java.io.File. (str (:output config) "/article/")))
-  (.mkdirs (java.io.File. (str (:output config) "/tag/")))
-  (if (contains? config :template) (.mkdirs (java.io.File. (:template config))))
+(defn- exec 
+  []
+  (println "exec")
+  (.mkdirs (java.io.File. (str (:output @config) "/article/")))
+  (.mkdirs (java.io.File. (str (:output @config) "/tag/")))
+  (when (contains? @config :template)
+    (.mkdirs (java.io.File. (:template @config))))
   (spit-index
     (mapv
       #(do
          (println "->" (.getName %1))
          (generation %1))
-      (-> (:input config)
+      (-> (:input @config)
           clojure.java.io/file
           file-seq
           only-markdown
           only-update)))
-  (spit (str (:input config) "/.data.clj") (pr-str @all-article))
+  (spit (str (:input @config) "/.data.edn") (pr-str @all-article))
   (println "done"))
+
+(defn -main
+  "I don't do a whole lot ... yet."
+  [& args]
+  (reset! config (clojure.edn/read-string (slurp (nth args 0 "_config.edn"))) )
+  (cond
+    (not (coll? @config)) (println "error config file")
+    (not (contains? @config :output)) (println "not found :output")
+    :else (exec )))

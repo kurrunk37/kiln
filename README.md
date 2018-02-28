@@ -4,7 +4,7 @@
 
 ## 配置文件
 
-当前目录的 _config.clj
+当前目录的 _config.edn
 
 ```
 {
@@ -12,7 +12,7 @@
   :output "./html/"
   :template "./_template/" ;(非必选)
   :blog-name "测试"
-  :blog-url "http://blog.kurrunk.com"
+  :blog-url "http://blog.run.num.com"
   :blog-description "我的博客"
 }
 ```
@@ -33,8 +33,11 @@
 
 #### 元数据项
 
+```
 date : 时间 (可选,默认为文件编辑时间)  
 title : 标题  
+tags: tag1,tag2
+```
 
 #### 正文
 
@@ -43,7 +46,19 @@ title : 标题
 ## 新增文章的步骤
 
 1. 编辑markdown文件
-2. 运行kiln.jar文件
+2. 运行kiln.jar文件,生成html文件
 3. 同步到你的服务器上
 
-通过以上步骤在本地生成网页文件，下一步就可以上传到服务器上了。
+## 编译
+
+在当前目录运行
+
+```shell
+java -jar kiln-x.x.x-standalone.jar
+```
+
+配置文件默认为`_config.edn`，也可以在命令行指定其它文件名：
+```shell
+java -jar kiln-x.x.x-standalone.jar myconfig.edn
+```
+
